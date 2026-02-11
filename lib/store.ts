@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import axios from 'axios'
 
 export type Market = 'US' | 'NSE' | 'BSE' | 'Global'
 
@@ -26,40 +27,113 @@ interface AppState {
     removeFromPortfolio: (symbol: string) => void
     investmentStrategy: string
     setInvestmentStrategy: (strategy: string) => void
-    openaiKey: string
-    setOpenaiKey: (key: string) => void
-    openaiModel: string
-    setOpenaiModel: (model: string) => void
     setPortfolioItemAnalysis: (symbol: string, analysis: PortfolioItem['lastAnalysis']) => void
+    // Sheets sync
+    spreadsheetId: string | null
+    setSpreadsheetId: (id: string) => void
+    sheetsLoaded: boolean
+    setSheetsLoaded: (loaded: boolean) => void
+    loadFromSheets: () => Promise<void>
+    syncPortfolioToSheets: () => Promise<void>
+    syncAnalysisToSheets: (symbol: string, analysis: NonNullable<PortfolioItem['lastAnalysis']>) => Promise<void>
+    setPortfolio: (portfolio: PortfolioItem[]) => void
 }
 
 export const useAppStore = create<AppState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             market: 'NSE',
             setMarket: (market) => set({ market }),
             portfolio: [],
-            addToPortfolio: (item) => set((state) => ({
-                portfolio: [...state.portfolio, item]
-            })),
-            removeFromPortfolio: (symbol) => set((state) => ({
-                portfolio: state.portfolio.filter((i) => i.symbol !== symbol)
-            })),
+            addToPortfolio: (item) => {
+                set((state) => ({
+                    portfolio: [...state.portfolio, item]
+                }))
+                // Auto-sync to sheets after adding
+                get().syncPortfolioToSheets().catch(console.error)
+            },
+            removeFromPortfolio: (symbol) => {
+                set((state) => ({
+                    portfolio: state.portfolio.filter((i) => i.symbol !== symbol)
+                }))
+                // Auto-sync to sheets after removing
+                get().syncPortfolioToSheets().catch(console.error)
+            },
             investmentStrategy: "",
             setInvestmentStrategy: (strategy) => set({ investmentStrategy: strategy }),
-            openaiKey: "",
-            setOpenaiKey: (key) => set({ openaiKey: key }),
-            openaiModel: "gpt-4o-mini",
-            setOpenaiModel: (model) => set({ openaiModel: model }),
-            setPortfolioItemAnalysis: (symbol, analysis) => set((state) => ({
-                portfolio: state.portfolio.map((item) =>
-                    item.symbol === symbol ? { ...item, lastAnalysis: analysis } : item
-                )
-            })),
+            setPortfolioItemAnalysis: (symbol, analysis) => {
+                set((state) => ({
+                    portfolio: state.portfolio.map((item) =>
+                        item.symbol === symbol ? { ...item, lastAnalysis: analysis } : item
+                    )
+                }))
+                // Sync analysis to sheets
+                if (analysis) {
+                    get().syncAnalysisToSheets(symbol, analysis).catch(console.error)
+                }
+            },
+            setPortfolio: (portfolio) => set({ portfolio }),
+
+            // Sheets sync state
+            spreadsheetId: null,
+            setSpreadsheetId: (id) => set({ spreadsheetId: id }),
+            sheetsLoaded: false,
+            setSheetsLoaded: (loaded) => set({ sheetsLoaded: loaded }),
+
+            loadFromSheets: async () => {
+                try {
+                    const res = await axios.get("/api/sheets/read")
+                    const { portfolio, spreadsheetId } = res.data
+                    set({
+                        portfolio,
+                        spreadsheetId,
+                        sheetsLoaded: true,
+                    })
+                } catch (error: any) {
+                    if (error.response?.status === 401) {
+                        // Not authenticated, skip
+                        return
+                    }
+                    console.error("Failed to load from sheets:", error)
+                }
+            },
+
+            syncPortfolioToSheets: async () => {
+                try {
+                    const { portfolio } = get()
+                    await axios.post("/api/sheets/sync", {
+                        action: "syncPortfolio",
+                        portfolio: portfolio.map(({ symbol, addedAt, addedDate }) => ({
+                            symbol,
+                            addedAt,
+                            addedDate,
+                        })),
+                    })
+                } catch (error: any) {
+                    if (error.response?.status === 401) return
+                    console.error("Failed to sync portfolio to sheets:", error)
+                }
+            },
+
+            syncAnalysisToSheets: async (symbol, analysis) => {
+                try {
+                    const { investmentStrategy } = get()
+                    await axios.post("/api/sheets/sync", {
+                        action: "syncAnalysis",
+                        analysis: {
+                            symbol,
+                            ...analysis,
+                            strategy: investmentStrategy,
+                        },
+                    })
+                } catch (error: any) {
+                    if (error.response?.status === 401) return
+                    console.error("Failed to sync analysis to sheets:", error)
+                }
+            },
         }),
         {
             name: 'investment-copilot-storage',
         }
     )
 )
-

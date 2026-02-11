@@ -2,11 +2,12 @@
 "use client"
 
 import * as React from "react"
+import { useSession } from "next-auth/react"
 import { useAppStore } from "@/lib/store"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { PortfolioRow } from "@/components/portfolio-row"
 import { Button } from "@/components/ui/button"
-import { Wand2, Loader2, Briefcase } from "lucide-react"
+import { Wand2, Loader2, Briefcase, CloudOff, Cloud } from "lucide-react"
 import axios from "axios"
 import {
     Table,
@@ -18,8 +19,16 @@ import {
 } from "@/components/ui/table"
 
 export function PortfolioDashboard() {
-    const { portfolio, investmentStrategy, setPortfolioItemAnalysis } = useAppStore()
+    const { data: session } = useSession()
+    const { portfolio, investmentStrategy, setPortfolioItemAnalysis, loadFromSheets, sheetsLoaded } = useAppStore()
     const [runningAll, setRunningAll] = React.useState(false)
+
+    // Load portfolio from Google Sheets when authenticated
+    React.useEffect(() => {
+        if (session?.accessToken && !sheetsLoaded) {
+            loadFromSheets()
+        }
+    }, [session, sheetsLoaded, loadFromSheets])
 
     const runAllAnalysis = async () => {
         if (!investmentStrategy) {

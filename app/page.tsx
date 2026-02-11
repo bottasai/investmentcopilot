@@ -3,8 +3,12 @@
 import { MarketSelector } from "@/components/market-selector"
 import { SearchBar } from "@/components/search-bar"
 import { PortfolioDashboard } from "@/components/portfolio-dashboard"
+import { AuthButton } from "@/components/auth-button"
+import { useSession } from "next-auth/react"
 
 export default function Home() {
+    const { data: session } = useSession()
+
     return (
         <div className="min-h-screen flex flex-col">
             {/* Header */}
@@ -18,7 +22,10 @@ export default function Home() {
                             Investment CoPilot
                         </h1>
                     </div>
-                    <MarketSelector />
+                    <div className="flex items-center gap-3">
+                        <MarketSelector />
+                        <AuthButton />
+                    </div>
                 </div>
             </header>
 
@@ -39,6 +46,15 @@ export default function Home() {
 
                 {/* Portfolio Dashboard - Full Width */}
                 <PortfolioDashboard />
+
+                {/* Sign-in prompt if not authenticated */}
+                {!session && (
+                    <div className="text-center mt-8 p-6 rounded-lg border border-border/40 bg-card/30">
+                        <p className="text-muted-foreground">
+                            Sign in with Google to save your portfolio to Google Sheets.
+                        </p>
+                    </div>
+                )}
             </main>
 
             {/* Footer */}
