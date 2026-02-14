@@ -16,11 +16,6 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
 } from "@/components/ui/table"
 import {
     Select,
