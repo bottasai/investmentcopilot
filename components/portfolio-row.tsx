@@ -15,9 +15,11 @@ import {
 
 interface PortfolioRowProps {
     item: PortfolioItem
+    horizon: 'short' | 'medium' | 'long'
 }
 
-export function PortfolioRow({ item }: PortfolioRowProps) {
+
+export function PortfolioRow({ item, horizon }: PortfolioRowProps) {
     const { removeFromPortfolio, investmentStrategy, setPortfolioItemAnalysis } = useAppStore()
     const [quote, setQuote] = React.useState<any>(null)
     const [history, setHistory] = React.useState<any[]>([])
@@ -96,9 +98,10 @@ export function PortfolioRow({ item }: PortfolioRowProps) {
         return (
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-auto py-1 px-2 text-xs text-left font-normal max-w-[140px] truncate hover:bg-muted transition-colors">
-                        {text}
+                    <Button variant="link" className="p-0 h-auto text-xs text-primary underline">
+                        Read full analysis
                     </Button>
+
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-4" side="top">
                     <div className="space-y-2">
@@ -141,15 +144,24 @@ export function PortfolioRow({ item }: PortfolioRowProps) {
             <TableCell>{getReturnForPeriod(30)}</TableCell>
             <TableCell>{getReturnForPeriod(365)}</TableCell>
 
-            <TableCell>
-                {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <SentimentBadge text={item.lastAnalysis?.horizon?.short} label="Short Term" />}
+            <TableCell className="max-w-[300px]">
+                {analyzing ? (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-xs">Analyzing...</span>
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-1">
+                        <div className="line-clamp-3 text-sm text-muted-foreground">
+                            {item.lastAnalysis?.horizon?.[horizon] || "--"}
+                        </div>
+                        {item.lastAnalysis?.horizon?.[horizon] && (
+                            <SentimentBadge text={item.lastAnalysis?.horizon?.[horizon]} label={`${horizon.charAt(0).toUpperCase() + horizon.slice(1)} Term`} />
+                        )}
+                    </div>
+                )}
             </TableCell>
-            <TableCell>
-                {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <SentimentBadge text={item.lastAnalysis?.horizon?.medium} label="Medium Term" />}
-            </TableCell>
-            <TableCell>
-                {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <SentimentBadge text={item.lastAnalysis?.horizon?.long} label="Long Term" />}
-            </TableCell>
+
 
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-1">

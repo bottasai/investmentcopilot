@@ -16,12 +16,27 @@ import {
     TableHead,
     TableHeader,
     TableRow,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from "@/components/ui/table"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+
 
 export function PortfolioDashboard() {
     const { data: session } = useSession()
     const { portfolio, investmentStrategy, setPortfolioItemAnalysis, loadFromSheets, sheetsLoaded, spreadsheetId } = useAppStore()
     const [runningAll, setRunningAll] = React.useState(false)
+    const [horizon, setHorizon] = React.useState<'short' | 'medium' | 'long'>('medium')
+
 
     // Load portfolio from Google Sheets when authenticated
     React.useEffect(() => {
@@ -142,6 +157,21 @@ export function PortfolioDashboard() {
                 </Button>
             </div>
 
+            <div className="flex items-center justify-end gap-2">
+                <span className="text-sm text-muted-foreground">Investment Horizon:</span>
+                <Select value={horizon} onValueChange={(v: any) => setHorizon(v)}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select horizon" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="short">Short Term (1-3mo)</SelectItem>
+                        <SelectItem value="medium">Medium Term (6-12mo)</SelectItem>
+                        <SelectItem value="long">Long Term (1-5yr)</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+
             {spreadsheetId && (
                 <div className="flex items-center gap-2 p-3 bg-green-50/50 border border-green-200 rounded-lg text-sm text-green-700">
                     <Cloud className="h-4 w-4" />
@@ -169,16 +199,16 @@ export function PortfolioDashboard() {
                                     <TableHead className="font-semibold text-foreground">5d</TableHead>
                                     <TableHead className="font-semibold text-foreground">30d</TableHead>
                                     <TableHead className="font-semibold text-foreground">1y</TableHead>
-                                    <TableHead className="font-semibold text-foreground">Short Term</TableHead>
-                                    <TableHead className="font-semibold text-foreground">Medium Term</TableHead>
-                                    <TableHead className="font-semibold text-foreground">Long Term</TableHead>
+                                    <TableHead className="font-semibold text-foreground w-[300px]">Pilot Recommendation</TableHead>
                                     <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
+
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {portfolio.map((item) => (
-                                    <PortfolioRow key={item.symbol} item={item} />
+                                    <PortfolioRow key={item.symbol} item={item} horizon={horizon} />
                                 ))}
+
                             </TableBody>
                         </Table>
                     </div>
