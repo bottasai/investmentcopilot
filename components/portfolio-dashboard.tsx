@@ -20,15 +20,16 @@ import {
 
 export function PortfolioDashboard() {
     const { data: session } = useSession()
-    const { portfolio, investmentStrategy, setPortfolioItemAnalysis, loadFromSheets, sheetsLoaded } = useAppStore()
+    const { portfolio, investmentStrategy, setPortfolioItemAnalysis, loadFromSheets, sheetsLoaded, spreadsheetId } = useAppStore()
     const [runningAll, setRunningAll] = React.useState(false)
 
     // Load portfolio from Google Sheets when authenticated
     React.useEffect(() => {
-        if (session?.accessToken && !sheetsLoaded) {
+        if (session?.accessToken && (!sheetsLoaded || !spreadsheetId)) {
             loadFromSheets()
         }
-    }, [session, sheetsLoaded, loadFromSheets])
+    }, [session, sheetsLoaded, spreadsheetId, loadFromSheets])
+
 
     const runAllAnalysis = async () => {
         if (!investmentStrategy) {
@@ -68,21 +69,56 @@ export function PortfolioDashboard() {
         }
     }
 
+    if (!sheetsLoaded && !portfolio.length) {
+        return (
+            <div className="flex flex-col items-center justify-center p-8 space-y-4">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <p className="text-muted-foreground">Loading your portfolio from Google Sheets...</p>
+                <Button variant="outline" onClick={() => loadFromSheets()}>
+                    Retry Connection
+                </Button>
+            </div>
+        )
+    }
+
     if (portfolio.length === 0) {
         return (
-            <Card className="border border-dashed border-border/60 bg-card/30">
-                <CardContent className="pt-10 pb-10 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="p-4 rounded-full bg-muted">
-                            <Briefcase className="h-10 w-10 text-muted-foreground" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold">Your portfolio is empty</h3>
-                            <p className="text-muted-foreground mt-1">Search for stocks above to add them to your portfolio.</p>
-                        </div>
+            <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 className="text-3xl font-bold tracking-tight">Your Portfolio</h2>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+
+                {spreadsheetId && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50/50 border border-green-200 rounded-lg text-sm text-green-700">
+                        <Cloud className="h-4 w-4" />
+                        <span>Syncing to Google Sheets</span>
+                        <a
+                            href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium underline hover:text-green-800 ml-1"
+                        >
+                            Open Spreadsheet
+                        </a>
+                    </div>
+                )}
+
+                <Card className="border border-dashed border-border/60 bg-card/30">
+                    <CardContent className="pt-10 pb-10 text-center">
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="p-4 rounded-full bg-muted">
+                                <Briefcase className="h-10 w-10 text-muted-foreground" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold">Your portfolio is empty</h3>
+                                <p className="text-muted-foreground mt-1">Search for stocks above to add them to your portfolio.</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         )
     }
 
@@ -105,6 +141,22 @@ export function PortfolioDashboard() {
                     {runningAll ? "Analyzing..." : "Run AI Analysis"}
                 </Button>
             </div>
+
+            {spreadsheetId && (
+                <div className="flex items-center gap-2 p-3 bg-green-50/50 border border-green-200 rounded-lg text-sm text-green-700">
+                    <Cloud className="h-4 w-4" />
+                    <span>Syncing to Google Sheets</span>
+                    <a
+                        href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium underline hover:text-green-800 ml-1"
+                    >
+                        Open Spreadsheet
+                    </a>
+                </div>
+            )}
+
 
             <Card className="border border-border/40 shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden">
                 <CardContent className="p-0">

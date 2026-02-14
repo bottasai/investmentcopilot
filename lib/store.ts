@@ -83,12 +83,23 @@ export const useAppStore = create<AppState>()(
             loadFromSheets: async () => {
                 try {
                     const res = await axios.get("/api/sheets/read")
-                    const { portfolio, spreadsheetId } = res.data
-                    set({
-                        portfolio,
-                        spreadsheetId,
-                        sheetsLoaded: true,
-                    })
+                    const { portfolio: cloudPortfolio, spreadsheetId } = res.data
+
+                    // Smart Sync: If cloud is empty but we have local data, upload it.
+                    const localPortfolio = get().portfolio
+                    if (cloudPortfolio.length === 0 && localPortfolio.length > 0) {
+                        console.log("Cloud empty, local has data. Syncing UP.")
+                        set({ spreadsheetId, sheetsLoaded: true })
+                        await get().syncPortfolioToSheets()
+                    } else {
+                        // Otherwise, trust cloud (download)
+                        set({
+                            portfolio: cloudPortfolio,
+                            spreadsheetId,
+                            sheetsLoaded: true,
+                        })
+                    }
+
                 } catch (error: any) {
                     if (error.response?.status === 401) {
                         // Not authenticated, skip
@@ -134,6 +145,13 @@ export const useAppStore = create<AppState>()(
         }),
         {
             name: 'investment-copilot-storage',
+            partialize: (state) => ({
+                market: state.market,
+                portfolio: state.portfolio,
+                investmentStrategy: state.investmentStrategy,
+                spreadsheetId: state.spreadsheetId,
+            }),
         }
+
     )
 )

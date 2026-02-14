@@ -17,6 +17,7 @@ export async function getOrCreateSpreadsheet(accessToken: string): Promise<strin
     const drive = google.drive({ version: "v3", auth })
 
     // Search for existing spreadsheet
+    console.log(`Searching for spreadsheet: ${SPREADSHEET_TITLE}`)
     const res = await drive.files.list({
         q: `name='${SPREADSHEET_TITLE}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`,
         fields: "files(id, name)",
@@ -24,12 +25,15 @@ export async function getOrCreateSpreadsheet(accessToken: string): Promise<strin
     })
 
     if (res.data.files && res.data.files.length > 0) {
+        console.log("Found existing spreadsheet:", res.data.files[0].id)
         return res.data.files[0].id!
     }
 
     // Create new spreadsheet
+    console.log("Creating new spreadsheet...")
     const sheets = google.sheets({ version: "v4", auth })
     const spreadsheet = await sheets.spreadsheets.create({
+
         requestBody: {
             properties: { title: SPREADSHEET_TITLE },
             sheets: [

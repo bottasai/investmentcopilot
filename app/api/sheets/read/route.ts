@@ -11,11 +11,15 @@ export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions)
         if (!session?.accessToken) {
+            console.error("Sheets API: Not authenticated")
             return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
         }
 
         const accessToken = session.accessToken
+        console.log("Sheets API: Authenticated, getting spreadsheet...")
         const spreadsheetId = await getOrCreateSpreadsheet(accessToken)
+        console.log("Sheets API: Got spreadsheet ID:", spreadsheetId)
+
 
         const [portfolio, analysisMap] = await Promise.all([
             readPortfolioFromSheet(accessToken, spreadsheetId),
