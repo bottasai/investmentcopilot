@@ -49,7 +49,7 @@ export function PortfolioRow({ item, horizon, analysisType }: PortfolioRowProps)
 
     const analyzeSentiment = async () => {
         if (!investmentStrategy) {
-            alert("Please set your Investment Strategy in settings.")
+            alert("Please set your Investment Strategy in Settings (⚙️ icon in the header).")
             return
         }
 

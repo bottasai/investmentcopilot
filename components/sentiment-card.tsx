@@ -19,7 +19,7 @@ export function SentimentCard({ symbol, history }: SentimentCardProps) {
 
     const analyze = async () => {
         if (!investmentStrategy) {
-            alert("Please set your Investment Strategy in settings first.")
+            alert("Please set your Investment Strategy in Settings (⚙️ icon in the header).")
             return
         }
         if (!history || history.length === 0) {

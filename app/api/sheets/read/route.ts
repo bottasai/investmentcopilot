@@ -5,6 +5,7 @@ import {
     getOrCreateSpreadsheet,
     readPortfolioFromSheet,
     readAnalysisFromSheet,
+    readSettingsFromSheet,
 } from "@/lib/api/sheets"
 
 export const dynamic = 'force-dynamic'
@@ -24,9 +25,10 @@ export async function GET(request: NextRequest) {
         console.log("Sheets API: Got spreadsheet ID:", spreadsheetId)
 
 
-        const [portfolio, analysisMap] = await Promise.all([
+        const [portfolio, analysisMap, settings] = await Promise.all([
             readPortfolioFromSheet(accessToken, spreadsheetId),
             readAnalysisFromSheet(accessToken, spreadsheetId),
+            readSettingsFromSheet(accessToken, spreadsheetId),
         ])
 
         // Merge analysis into portfolio items
@@ -38,6 +40,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             portfolio: enrichedPortfolio,
             spreadsheetId,
+            settings,
         })
     } catch (error: any) {
         console.error("Sheets read error:", error)

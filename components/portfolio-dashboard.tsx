@@ -45,7 +45,7 @@ export function PortfolioDashboard() {
 
     const runAllAnalysis = async () => {
         if (!investmentStrategy) {
-            alert("Please configure Investment Strategy in settings first.")
+            alert("Please configure your Investment Strategy in Settings (⚙️ icon in the header) before running analysis.")
             return
         }
 

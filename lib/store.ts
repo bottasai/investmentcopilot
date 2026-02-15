@@ -46,6 +46,7 @@ interface AppState {
     loadFromSheets: () => Promise<void>
     syncPortfolioToSheets: () => Promise<void>
     syncAnalysisToSheets: (symbol: string, analysis: NonNullable<PortfolioItem['lastAnalysis']>) => Promise<void>
+    syncSettingsToSheets: () => Promise<void>
     setPortfolio: (portfolio: PortfolioItem[]) => void
     clearOnLogout: () => void
 }
@@ -107,21 +108,31 @@ export const useAppStore = create<AppState>()(
             loadFromSheets: async () => {
                 try {
                     const res = await axios.get("/api/sheets/read")
-                    const { portfolio: cloudPortfolio, spreadsheetId } = res.data
+                    const { portfolio: cloudPortfolio, spreadsheetId, settings } = res.data
 
-                    // Smart Sync: If cloud is empty but we have local data, upload it.
-                    const localPortfolio = get().portfolio
-                    if (cloudPortfolio.length === 0 && localPortfolio.length > 0) {
-                        console.log("Cloud empty, local has data. Syncing UP.")
-                        set({ spreadsheetId, sheetsLoaded: true })
-                        await get().syncPortfolioToSheets()
-                    } else {
-                        // Otherwise, trust cloud (download)
-                        set({
-                            portfolio: cloudPortfolio,
-                            spreadsheetId,
-                            sheetsLoaded: true,
-                        })
+                    // Load settings from cloud
+                    if (settings) {
+                        const updates: any = { spreadsheetId, sheetsLoaded: true }
+                        if (settings.investmentStrategy) {
+                            updates.investmentStrategy = settings.investmentStrategy
+                        }
+                        if (settings.market) {
+                            updates.market = settings.market
+                        }
+
+                        // Smart Sync: If cloud is empty but we have local data, upload it.
+                        const localPortfolio = get().portfolio
+                        if (cloudPortfolio.length === 0 && localPortfolio.length > 0) {
+                            console.log("Cloud empty, local has data. Syncing UP.")
+                            set(updates)
+                            await get().syncPortfolioToSheets()
+                        } else {
+                            // Otherwise, trust cloud (download)
+                            set({
+                                ...updates,
+                                portfolio: cloudPortfolio,
+                            })
+                        }
                     }
 
                 } catch (error: any) {
@@ -157,13 +168,32 @@ export const useAppStore = create<AppState>()(
                         action: "syncAnalysis",
                         analysis: {
                             symbol,
-                            ...analysis,
+                            rating: analysis.rating,
+                            fundamental: analysis.fundamental,
+                            technical: analysis.technical,
+                            timestamp: analysis.timestamp,
                             strategy: investmentStrategy,
                         },
                     })
                 } catch (error: any) {
                     if (error.response?.status === 401) return
                     console.error("Failed to sync analysis to sheets:", error)
+                }
+            },
+
+            syncSettingsToSheets: async () => {
+                try {
+                    const { investmentStrategy, market } = get()
+                    await axios.post("/api/sheets/sync", {
+                        action: "syncSettings",
+                        settings: {
+                            investmentStrategy,
+                            market,
+                        },
+                    })
+                } catch (error: any) {
+                    if (error.response?.status === 401) return
+                    console.error("Failed to sync settings to sheets:", error)
                 }
             },
         }),

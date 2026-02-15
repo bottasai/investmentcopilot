@@ -5,6 +5,7 @@ import {
     getOrCreateSpreadsheet,
     syncPortfolioToSheet,
     appendAnalysisToSheet,
+    writeSettingsToSheet,
 } from "@/lib/api/sheets"
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
         }
 
-        const { action, portfolio, analysis } = await request.json()
+        const { action, portfolio, analysis, settings } = await request.json()
         const accessToken = session.accessToken
 
         // Get or create the spreadsheet
@@ -30,6 +31,11 @@ export async function POST(request: NextRequest) {
 
         if (action === "syncAnalysis") {
             await appendAnalysisToSheet(accessToken, spreadsheetId, analysis)
+            return NextResponse.json({ success: true, spreadsheetId })
+        }
+
+        if (action === "syncSettings") {
+            await writeSettingsToSheet(accessToken, spreadsheetId, settings)
             return NextResponse.json({ success: true, spreadsheetId })
         }
 

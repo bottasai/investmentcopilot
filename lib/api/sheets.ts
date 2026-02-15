@@ -26,7 +26,12 @@ export async function getOrCreateSpreadsheet(accessToken: string): Promise<strin
 
     if (res.data.files && res.data.files.length > 0) {
         console.log("Found existing spreadsheet:", res.data.files[0].id)
-        return res.data.files[0].id!
+        const spreadsheetId = res.data.files[0].id!
+
+        // Ensure the Settings tab exists (migration for older spreadsheets)
+        await ensureSettingsTab(accessToken, spreadsheetId)
+
+        return spreadsheetId
     }
 
     // Create new spreadsheet
@@ -42,6 +47,9 @@ export async function getOrCreateSpreadsheet(accessToken: string): Promise<strin
                 },
                 {
                     properties: { title: "Analysis History", index: 1 },
+                },
+                {
+                    properties: { title: "Settings", index: 2 },
                 },
             ],
         },
@@ -62,14 +70,54 @@ export async function getOrCreateSpreadsheet(accessToken: string): Promise<strin
     // Write headers to Analysis History tab
     await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: "'Analysis History'!A1:G1",
+        range: "'Analysis History'!A1:F1",
         valueInputOption: "RAW",
         requestBody: {
-            values: [["Symbol", "Rating", "Short Term", "Medium Term", "Long Term", "Timestamp", "Strategy"]],
+            values: [["Symbol", "Rating", "Fundamental (JSON)", "Technical (JSON)", "Timestamp", "Strategy"]],
+        },
+    })
+
+    // Write headers to Settings tab
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: "Settings!A1:B1",
+        valueInputOption: "RAW",
+        requestBody: {
+            values: [["Key", "Value"]],
         },
     })
 
     return spreadsheetId
+}
+
+/**
+ * Ensure the Settings tab exists (for spreadsheets created before this feature).
+ */
+async function ensureSettingsTab(accessToken: string, spreadsheetId: string) {
+    const auth = getAuth(accessToken)
+    const sheets = google.sheets({ version: "v4", auth })
+
+    try {
+        const meta = await sheets.spreadsheets.get({ spreadsheetId, fields: "sheets.properties.title" })
+        const titles = meta.data.sheets?.map(s => s.properties?.title) || []
+
+        if (!titles.includes("Settings")) {
+            await sheets.spreadsheets.batchUpdate({
+                spreadsheetId,
+                requestBody: {
+                    requests: [{ addSheet: { properties: { title: "Settings" } } }],
+                },
+            })
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: "Settings!A1:B1",
+                valueInputOption: "RAW",
+                requestBody: { values: [["Key", "Value"]] },
+            })
+        }
+    } catch (e) {
+        console.error("ensureSettingsTab error:", e)
+    }
 }
 
 /**
@@ -131,6 +179,7 @@ export async function readPortfolioFromSheet(
 
 /**
  * Append analysis result to Analysis History sheet.
+ * Stores fundamental and technical data as JSON strings.
  */
 export async function appendAnalysisToSheet(
     accessToken: string,
@@ -138,7 +187,8 @@ export async function appendAnalysisToSheet(
     analysis: {
         symbol: string
         rating: number
-        horizon: { short: string; medium: string; long: string }
+        fundamental?: any
+        technical?: any
         timestamp: string
         strategy?: string
     }
@@ -148,15 +198,14 @@ export async function appendAnalysisToSheet(
 
     await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: "'Analysis History'!A:G",
+        range: "'Analysis History'!A:F",
         valueInputOption: "RAW",
         requestBody: {
             values: [[
                 analysis.symbol,
                 analysis.rating,
-                analysis.horizon.short,
-                analysis.horizon.medium,
-                analysis.horizon.long,
+                JSON.stringify(analysis.fundamental || {}),
+                JSON.stringify(analysis.technical || {}),
                 analysis.timestamp,
                 analysis.strategy || "",
             ]],
@@ -166,17 +215,18 @@ export async function appendAnalysisToSheet(
 
 /**
  * Read the latest analysis per symbol from Analysis History.
+ * Handles both old (horizon strings) and new (JSON) formats.
  */
 export async function readAnalysisFromSheet(
     accessToken: string,
     spreadsheetId: string
-): Promise<Record<string, { rating: number; horizon: { short: string; medium: string; long: string }; timestamp: string }>> {
+): Promise<Record<string, any>> {
     const auth = getAuth(accessToken)
     const sheets = google.sheets({ version: "v4", auth })
 
     const res = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: "'Analysis History'!A2:G1000",
+        range: "'Analysis History'!A2:F1000",
     })
 
     const rows = res.data.values || []
@@ -184,16 +234,105 @@ export async function readAnalysisFromSheet(
 
     for (const row of rows) {
         const symbol = row[0]
-        latestBySymbol[symbol] = {
-            rating: Number(row[1]) || 0,
-            horizon: {
-                short: row[2] || "",
-                medium: row[3] || "",
-                long: row[4] || "",
-            },
-            timestamp: row[5] || "",
+        if (!symbol) continue
+
+        try {
+            // Try parsing as new JSON format
+            const fundamental = JSON.parse(row[2] || "{}")
+            const technical = JSON.parse(row[3] || "{}")
+
+            // Check if it's actually structured data (has good/bad arrays)
+            const isStructured = fundamental?.short?.good !== undefined
+
+            if (isStructured) {
+                latestBySymbol[symbol] = {
+                    rating: Number(row[1]) || 0,
+                    fundamental,
+                    technical,
+                    timestamp: row[4] || "",
+                }
+            } else {
+                // Legacy format — skip, will be re-analyzed
+                latestBySymbol[symbol] = {
+                    rating: Number(row[1]) || 0,
+                    fundamental: { short: { good: [], bad: [] }, medium: { good: [], bad: [] }, long: { good: [], bad: [] } },
+                    technical: { short: { good: [], bad: [] }, medium: { good: [], bad: [] }, long: { good: [], bad: [] } },
+                    timestamp: row[4] || "",
+                }
+            }
+        } catch {
+            // If JSON parse fails, treat as legacy format
+            latestBySymbol[symbol] = {
+                rating: Number(row[1]) || 0,
+                fundamental: { short: { good: [], bad: [] }, medium: { good: [], bad: [] }, long: { good: [], bad: [] } },
+                technical: { short: { good: [], bad: [] }, medium: { good: [], bad: [] }, long: { good: [], bad: [] } },
+                timestamp: row[4] || "",
+            }
         }
     }
 
     return latestBySymbol
+}
+
+/**
+ * Read user settings (investmentStrategy, market) from the Settings tab.
+ */
+export async function readSettingsFromSheet(
+    accessToken: string,
+    spreadsheetId: string
+): Promise<{ investmentStrategy: string; market: string }> {
+    const auth = getAuth(accessToken)
+    const sheets = google.sheets({ version: "v4", auth })
+
+    try {
+        const res = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: "Settings!A2:B100",
+        })
+
+        const rows = res.data.values || []
+        const settings: Record<string, string> = {}
+
+        for (const row of rows) {
+            if (row[0]) settings[row[0]] = row[1] || ""
+        }
+
+        return {
+            investmentStrategy: settings["investmentStrategy"] || "",
+            market: settings["market"] || "NSE",
+        }
+    } catch (e) {
+        console.error("readSettingsFromSheet error:", e)
+        return { investmentStrategy: "", market: "NSE" }
+    }
+}
+
+/**
+ * Write user settings to the Settings tab (overwrite).
+ */
+export async function writeSettingsToSheet(
+    accessToken: string,
+    spreadsheetId: string,
+    settings: { investmentStrategy: string; market: string }
+) {
+    const auth = getAuth(accessToken)
+    const sheets = google.sheets({ version: "v4", auth })
+
+    // Clear existing settings (keep header)
+    await sheets.spreadsheets.values.clear({
+        spreadsheetId,
+        range: "Settings!A2:B100",
+    })
+
+    const values = [
+        ["investmentStrategy", settings.investmentStrategy],
+        ["market", settings.market],
+    ]
+
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: "Settings!A2:B3",
+        valueInputOption: "RAW",
+        requestBody: { values },
+    })
 }
