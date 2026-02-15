@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { PortfolioRow } from "@/components/portfolio-row"
 import { PortfolioSummary } from "@/components/portfolio-summary"
 import { Button } from "@/components/ui/button"
-import { Wand2, Loader2, Briefcase, CloudOff, Cloud } from "lucide-react"
+import { Wand2, Loader2, Briefcase } from "lucide-react"
 import axios from "axios"
 import {
     Table,
@@ -128,20 +128,7 @@ export function PortfolioDashboard() {
                     </div>
                 </div>
 
-                {spreadsheetId && (
-                    <div className="flex items-center gap-2 p-3 bg-green-50/50 border border-green-200 rounded-lg text-sm text-green-700">
-                        <Cloud className="h-4 w-4" />
-                        <span>Syncing to Google Sheets</span>
-                        <a
-                            href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium underline hover:text-green-800 ml-1"
-                        >
-                            Open Spreadsheet
-                        </a>
-                    </div>
-                )}
+
 
                 <Card className="border border-dashed border-border/60 bg-card/30">
                     <CardContent className="pt-10 pb-10 text-center">
@@ -212,20 +199,7 @@ export function PortfolioDashboard() {
 
             <PortfolioSummary portfolio={portfolio} horizon={horizon} analysisType={analysisType} />
 
-            {spreadsheetId && (
-                <div className="flex items-center gap-2 p-3 bg-green-50/50 border border-green-200 rounded-lg text-sm text-green-700">
-                    <Cloud className="h-4 w-4" />
-                    <span>Syncing to Google Sheets</span>
-                    <a
-                        href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium underline hover:text-green-800 ml-1"
-                    >
-                        Open Spreadsheet
-                    </a>
-                </div>
-            )}
+
 
 
             <Card className="border border-border/40 shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden">
