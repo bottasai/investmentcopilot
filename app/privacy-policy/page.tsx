@@ -60,7 +60,7 @@ export default function PrivacyPolicy() {
             <section className="mb-6">
                 <h2 className="text-xl font-semibold mb-2">6. Contact Us</h2>
                 <p>
-                    If you have any questions about this Privacy Policy, please contact us at support@calculatefd.com.
+                    If you have any questions about this Privacy Policy, please contact us at learnwithbotta@gmail.com.
                 </p>
             </section>
 
