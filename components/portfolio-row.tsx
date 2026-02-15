@@ -3,6 +3,7 @@
 
 import * as React from "react"
 import { PortfolioItem, useAppStore } from "@/lib/store"
+import { formatPrice } from "@/lib/currency"
 import { TableCell, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Trash2, Loader2, Wand2 } from "lucide-react"
@@ -21,7 +22,7 @@ interface PortfolioRowProps {
 
 
 export function PortfolioRow({ item, horizon, analysisType }: PortfolioRowProps) {
-    const { removeFromPortfolio, investmentStrategy, setPortfolioItemAnalysis } = useAppStore()
+    const { removeFromPortfolio, investmentStrategy, setPortfolioItemAnalysis, market } = useAppStore()
     const [quote, setQuote] = React.useState<any>(null)
     const [history, setHistory] = React.useState<any[]>([])
     const [loading, setLoading] = React.useState(true)
@@ -188,8 +189,8 @@ export function PortfolioRow({ item, horizon, analysisType }: PortfolioRowProps)
                                 {new Date(item.lastAnalysis.timestamp).toLocaleDateString()}
                             </span>
                             <span className={`text-[10px] font-medium px-1 rounded ${item.lastAnalysis.rating >= 4 ? 'bg-emerald-500/10 text-emerald-400' :
-                                    item.lastAnalysis.rating >= 3 ? 'bg-yellow-500/10 text-yellow-400' :
-                                        'bg-rose-500/10 text-rose-400'
+                                item.lastAnalysis.rating >= 3 ? 'bg-yellow-500/10 text-yellow-400' :
+                                    'bg-rose-500/10 text-rose-400'
                                 }`}>
                                 {item.lastAnalysis.rating}/5
                             </span>
@@ -198,7 +199,7 @@ export function PortfolioRow({ item, horizon, analysisType }: PortfolioRowProps)
                 </div>
             </TableCell>
             <TableCell className="font-medium">
-                {quote ? `${quote.currency} ${quote.price.toFixed(2)}` : "--"}
+                {quote ? formatPrice(quote.price, quote.currency, market) : "--"}
             </TableCell>
             <TableCell>{getReturnForPeriod(5)}</TableCell>
             <TableCell>{getReturnForPeriod(30)}</TableCell>
