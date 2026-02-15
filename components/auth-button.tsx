@@ -3,9 +3,16 @@
 import { useSession, signIn, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { LogIn, LogOut } from "lucide-react"
+import { useAppStore } from "@/lib/store"
 
 export function AuthButton() {
     const { data: session, status } = useSession()
+    const clearOnLogout = useAppStore((state) => state.clearOnLogout)
+
+    const handleSignOut = () => {
+        clearOnLogout()
+        signOut()
+    }
 
     if (status === "loading") {
         return (
@@ -33,7 +40,7 @@ export function AuthButton() {
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => signOut()}
+                    onClick={handleSignOut}
                     className="text-muted-foreground hover:text-foreground"
                 >
                     <LogOut className="h-4 w-4" />

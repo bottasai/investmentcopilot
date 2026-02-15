@@ -37,6 +37,7 @@ interface AppState {
     syncPortfolioToSheets: () => Promise<void>
     syncAnalysisToSheets: (symbol: string, analysis: NonNullable<PortfolioItem['lastAnalysis']>) => Promise<void>
     setPortfolio: (portfolio: PortfolioItem[]) => void
+    clearOnLogout: () => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -73,6 +74,19 @@ export const useAppStore = create<AppState>()(
                 }
             },
             setPortfolio: (portfolio) => set({ portfolio }),
+
+            clearOnLogout: () => {
+                set({
+                    portfolio: [],
+                    spreadsheetId: null,
+                    sheetsLoaded: false,
+                    investmentStrategy: '',
+                })
+                // Also clear the persisted localStorage entry
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem('investment-copilot-storage')
+                }
+            },
 
             // Sheets sync state
             spreadsheetId: null,

@@ -79,6 +79,32 @@ export function PortfolioDashboard() {
         }
     }
 
+    // Guard: don't show portfolio if not authenticated
+    if (!session) {
+        return (
+            <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 className="text-3xl font-bold tracking-tight">Your Portfolio</h2>
+                    </div>
+                </div>
+                <Card className="border border-dashed border-border/60 bg-card/30">
+                    <CardContent className="pt-10 pb-10 text-center">
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="p-4 rounded-full bg-muted">
+                                <Briefcase className="h-10 w-10 text-muted-foreground" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold">Sign in to view your portfolio</h3>
+                                <p className="text-muted-foreground mt-1">Sign in with Google to track stocks and get AI-driven insights.</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
     if (!sheetsLoaded && !portfolio.length) {
         return (
             <div className="flex flex-col items-center justify-center p-8 space-y-4">
