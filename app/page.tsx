@@ -11,18 +11,18 @@ export default function Home() {
 
     return (
         <div className="min-h-screen flex flex-col">
-            {/* Header */}
+            {/* Header — minimal, persistent */}
             <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="container flex h-16 items-center justify-between px-4 md:px-8">
-                    <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">IC</span>
+                <div className="container flex h-14 items-center justify-between px-4 md:px-8">
+                    <div className="flex items-center gap-2.5">
+                        <div className="h-7 w-7 rounded-lg bg-primary/90 flex items-center justify-center">
+                            <span className="text-primary-foreground font-semibold text-xs">IC</span>
                         </div>
-                        <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
+                        <span className="text-sm font-semibold tracking-tight text-foreground">
                             Investment CoPilot
-                        </h1>
+                        </span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                         <MarketSelector />
                         <AuthButton />
                     </div>
@@ -30,36 +30,36 @@ export default function Home() {
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 container px-4 md:px-8 py-8">
-                {/* Hero Search Section */}
-                <div className="mb-10 text-center max-w-2xl mx-auto">
-                    <h2 className="text-4xl font-bold tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white">
+            <main className="flex-1 container px-4 md:px-8 py-10">
+                {/* Search Section — dominant, generous spacing */}
+                <section className="mb-12 max-w-2xl mx-auto text-center">
+                    <h2 className="text-2xl font-semibold tracking-tight mb-2 text-foreground">
                         Search Global Markets
                     </h2>
-                    <p className="text-muted-foreground text-lg mb-6">
-                        Access stocks from US, NSE, and BSE. Get AI-driven investment insights.
+                    <p className="text-sm text-muted-foreground mb-6">
+                        Find stocks from US, NSE, and BSE exchanges
                     </p>
-                    <div className="max-w-xl mx-auto">
+                    <div className="max-w-lg mx-auto">
                         <SearchBar />
                     </div>
-                </div>
+                </section>
 
-                {/* Portfolio Dashboard - Full Width */}
+                {/* Portfolio Dashboard */}
                 <PortfolioDashboard />
 
-                {/* Sign-in prompt if not authenticated */}
+                {/* Sign-in prompt */}
                 {!session && (
-                    <div className="text-center mt-8 p-6 rounded-lg border border-border/40 bg-card/30">
-                        <p className="text-muted-foreground">
-                            Sign in with Google to save your portfolio to Google Sheets.
+                    <div className="text-center mt-10 py-8 rounded-xl border border-border/40 bg-card/50">
+                        <p className="text-sm text-muted-foreground">
+                            Sign in with Google to persist your portfolio across devices.
                         </p>
                     </div>
                 )}
             </main>
 
             {/* Footer */}
-            <footer className="border-t border-border/40 py-6 text-center text-sm text-muted-foreground">
-                <p>Investment CoPilot &copy; {new Date().getFullYear()}. AI-powered investment analysis. | <a href="/privacy-policy" className="hover:underline">Privacy Policy</a></p>
+            <footer className="border-t border-border/40 py-5 text-center text-xs text-muted-foreground">
+                <p>Investment CoPilot &copy; {new Date().getFullYear()} &middot; <a href="/privacy-policy" className="hover:underline">Privacy Policy</a></p>
             </footer>
         </div>
     )

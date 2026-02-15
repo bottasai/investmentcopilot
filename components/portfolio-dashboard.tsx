@@ -4,7 +4,6 @@
 import * as React from "react"
 import { useSession } from "next-auth/react"
 import { useAppStore } from "@/lib/store"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { PortfolioRow } from "@/components/portfolio-row"
 import { PortfolioSummary } from "@/components/portfolio-summary"
 import { Button } from "@/components/ui/button"
@@ -13,7 +12,6 @@ import axios from "axios"
 import {
     Table,
     TableBody,
-    TableCell,
     TableHead,
     TableHeader,
     TableRow,
@@ -25,6 +23,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 
 export function PortfolioDashboard() {
@@ -81,39 +85,35 @@ export function PortfolioDashboard() {
         }
     }
 
-    // Guard: don't show portfolio if not authenticated
+    // Guard: not authenticated
     if (!session) {
         return (
-            <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h2 className="text-3xl font-bold tracking-tight">Your Portfolio</h2>
+            <section className="space-y-6">
+                <h2 className="text-xl font-semibold tracking-tight">Your Portfolio</h2>
+                <div className="rounded-xl border border-dashed border-border/60 bg-card/30 py-16 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="p-4 rounded-full bg-muted/60">
+                            <Briefcase className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-medium">Sign in to view your portfolio</h3>
+                            <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
+                                Sign in with Google to track stocks and get AI-driven insights.
+                            </p>
+                        </div>
                     </div>
                 </div>
-                <Card className="border border-dashed border-border/60 bg-card/30">
-                    <CardContent className="pt-10 pb-10 text-center">
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="p-4 rounded-full bg-muted">
-                                <Briefcase className="h-10 w-10 text-muted-foreground" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold">Sign in to view your portfolio</h3>
-                                <p className="text-muted-foreground mt-1">Sign in with Google to track stocks and get AI-driven insights.</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+            </section>
         )
     }
 
     if (!sheetsLoaded && !portfolio.length) {
         return (
-            <div className="flex flex-col items-center justify-center p-8 space-y-4">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                <p className="text-muted-foreground">Loading your portfolio from Google Sheets...</p>
-                <Button variant="outline" onClick={() => loadFromSheets()}>
-                    Retry Connection
+            <div className="flex flex-col items-center justify-center py-16 space-y-4">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Loading your portfolio…</p>
+                <Button variant="outline" size="sm" onClick={() => loadFromSheets()}>
+                    Retry
                 </Button>
             </div>
         )
@@ -121,100 +121,104 @@ export function PortfolioDashboard() {
 
     if (portfolio.length === 0) {
         return (
-            <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h2 className="text-3xl font-bold tracking-tight">Your Portfolio</h2>
+            <section className="space-y-6">
+                <h2 className="text-xl font-semibold tracking-tight">Your Portfolio</h2>
+                <div className="rounded-xl border border-dashed border-border/60 bg-card/30 py-16 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="p-4 rounded-full bg-muted/60">
+                            <Briefcase className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-medium">Your portfolio is empty</h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Search for stocks above to add them.
+                            </p>
+                        </div>
                     </div>
                 </div>
-
-
-
-                <Card className="border border-dashed border-border/60 bg-card/30">
-                    <CardContent className="pt-10 pb-10 text-center">
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="p-4 rounded-full bg-muted">
-                                <Briefcase className="h-10 w-10 text-muted-foreground" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold">Your portfolio is empty</h3>
-                                <p className="text-muted-foreground mt-1">Search for stocks above to add them to your portfolio.</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+            </section>
         )
     }
 
-    const analysisTypeLabel = analysisType === 'fundamental' ? 'Fundamentals' : 'Technicals'
-
     return (
-        <div className="space-y-6">
+        <section className="space-y-8">
+            {/* Header row */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Your Portfolio</h2>
-                    <p className="text-muted-foreground mt-1">
-                        {portfolio.length} stock{portfolio.length > 1 ? 's' : ''} tracked. Click on AI insights to view full text.
+                    <h2 className="text-xl font-semibold tracking-tight">Your Portfolio</h2>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        {portfolio.length} stock{portfolio.length > 1 ? 's' : ''} tracked
                     </p>
                 </div>
                 <Button
                     onClick={runAllAnalysis}
                     disabled={runningAll}
-                    size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/25 transition-all"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 text-xs"
                 >
-                    {runningAll ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
-                    {runningAll ? "Analyzing..." : "Run AI Analysis"}
+                    {runningAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                    {runningAll ? "Analyzing…" : "Run AI Analysis"}
                 </Button>
             </div>
 
-            <div className="flex flex-wrap items-center justify-end gap-3">
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Horizon:</span>
-                    <Select value={horizon} onValueChange={(v: any) => setHorizon(v)}>
-                        <SelectTrigger className="w-[170px]">
-                            <SelectValue placeholder="Select horizon" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="short">Short Term (1-3mo)</SelectItem>
-                            <SelectItem value="medium">Medium Term (6-12mo)</SelectItem>
-                            <SelectItem value="long">Long Term (1-5yr)</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Analysis:</span>
-                    <Select value={analysisType} onValueChange={(v: any) => setAnalysisType(v)}>
-                        <SelectTrigger className="w-[160px]">
-                            <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="fundamental">Fundamentals</SelectItem>
-                            <SelectItem value="technical">Technicals</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-3">
+                <Select value={horizon} onValueChange={(v: any) => setHorizon(v)}>
+                    <SelectTrigger className="w-[160px] h-8 text-xs">
+                        <SelectValue placeholder="Horizon" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="short">Short (1-3 mo)</SelectItem>
+                        <SelectItem value="medium">Medium (6-12 mo)</SelectItem>
+                        <SelectItem value="long">Long (1-5 yr)</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select value={analysisType} onValueChange={(v: any) => setAnalysisType(v)}>
+                    <SelectTrigger className="w-[140px] h-8 text-xs">
+                        <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="fundamental">Fundamentals</SelectItem>
+                        <SelectItem value="technical">Technicals</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
+            {/* Summary Card */}
             <PortfolioSummary portfolio={portfolio} horizon={horizon} analysisType={analysisType} />
 
-
-
-
-            <Card className="border border-border/40 shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden">
-                <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                        <Table>
+            {/* Table */}
+            <div className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <TooltipProvider delayDuration={200}>
+                        <Table className="dashboard-table">
                             <TableHeader>
-                                <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-border/40">
-                                    <TableHead className="font-semibold text-foreground">Symbol</TableHead>
-                                    <TableHead className="font-semibold text-foreground">Price</TableHead>
-                                    <TableHead className="font-semibold text-foreground">5d</TableHead>
-                                    <TableHead className="font-semibold text-foreground">30d</TableHead>
-                                    <TableHead className="font-semibold text-foreground">1y</TableHead>
-                                    <TableHead className="font-semibold text-foreground w-[300px]">{analysisTypeLabel}</TableHead>
-                                    <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
+                                <TableRow className="border-b border-border/30 hover:bg-transparent">
+                                    <TableHead className="w-[140px]">Symbol</TableHead>
+                                    <TableHead>Price</TableHead>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <TableHead className="cursor-help">5D</TableHead>
+                                        </TooltipTrigger>
+                                        <TooltipContent>5-day return</TooltipContent>
+                                    </Tooltip>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <TableHead className="cursor-help">30D</TableHead>
+                                        </TooltipTrigger>
+                                        <TooltipContent>30-day return</TooltipContent>
+                                    </Tooltip>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <TableHead className="cursor-help">1Y</TableHead>
+                                        </TooltipTrigger>
+                                        <TooltipContent>1-year return</TooltipContent>
+                                    </Tooltip>
+                                    <TableHead className="w-[280px]">
+                                        {analysisType === 'fundamental' ? 'Fundamentals' : 'Technicals'}
+                                    </TableHead>
+                                    <TableHead className="text-right w-[80px]">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -223,9 +227,9 @@ export function PortfolioDashboard() {
                                 ))}
                             </TableBody>
                         </Table>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+                    </TooltipProvider>
+                </div>
+            </div>
+        </section>
     )
 }

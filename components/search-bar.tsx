@@ -1,10 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Search } from "lucide-react"
+import { Search, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useAppStore } from "@/lib/store"
-import { Card } from "@/components/ui/card"
 import axios from "axios"
 
 // Debounce hook
@@ -31,7 +30,6 @@ export function SearchBar() {
     const { market, addToPortfolio, portfolio } = useAppStore()
 
     const handleSelect = (result: any) => {
-        // Check if already in portfolio
         if (portfolio.some(p => p.symbol === result.symbol)) {
             alert(`${result.symbol} is already in your portfolio`)
             return
@@ -39,7 +37,7 @@ export function SearchBar() {
 
         addToPortfolio({
             symbol: result.symbol,
-            addedAt: 0, // Ideally fetch current price here, but let's default to 0 and update in dashboard or fetch now
+            addedAt: 0,
             addedDate: new Date().toISOString()
         })
         setQuery("")
@@ -71,37 +69,39 @@ export function SearchBar() {
     }, [debouncedQuery, market])
 
     return (
-        <div className="relative w-full max-w-sm">
+        <div className="relative w-full">
             <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                {loading && (
+                    <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+                )}
                 <Input
                     placeholder={`Search ${market} stocks...`}
-                    className="pl-8"
+                    className="pl-10 pr-10 h-11 text-sm rounded-xl border-border/60 bg-card/60 backdrop-blur-sm focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                 />
             </div>
-            {(results.length > 0 || loading) && (
-                <Card className="absolute top-full z-10 mt-1 w-full p-2">
-                    {loading ? (
-                        <div className="p-2 text-sm text-muted-foreground">Searching...</div>
-                    ) : (
-                        <ul className="space-y-1">
-                            {results.map((result: any) => (
-                                <li
-                                    key={result.symbol}
-                                    onClick={() => handleSelect(result)}
-                                    className="cursor-pointer rounded px-2 py-1 hover:bg-accent hover:text-accent-foreground text-sm"
-                                >
-                                    <div className="font-medium">{result.symbol}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                        {result.name} ({result.exchange})
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </Card>
+            {(results.length > 0) && (
+                <div className="absolute top-full z-20 mt-2 w-full rounded-xl border border-border/60 bg-popover shadow-lg overflow-hidden">
+                    <ul className="py-1 max-h-64 overflow-y-auto">
+                        {results.map((result: any) => (
+                            <li
+                                key={result.symbol}
+                                onClick={() => handleSelect(result)}
+                                className="cursor-pointer px-4 py-2.5 hover:bg-muted/50 transition-colors"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium text-foreground">{result.symbol}</span>
+                                    <span className="text-[11px] text-muted-foreground">{result.exchange}</span>
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                                    {result.name}
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             )}
         </div>
     )

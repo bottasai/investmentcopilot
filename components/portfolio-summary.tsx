@@ -4,7 +4,7 @@
 import * as React from "react"
 import { PortfolioItem } from "@/lib/store"
 import { Card, CardContent } from "@/components/ui/card"
-import { TrendingUp, TrendingDown, Minus, BarChart3 } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, BarChart3, CheckCircle2, AlertTriangle } from "lucide-react"
 
 interface PortfolioSummaryProps {
     portfolio: PortfolioItem[]
@@ -29,24 +29,24 @@ export function PortfolioSummary({ portfolio, horizon, analysisType }: Portfolio
     const horizonLabel = { short: 'Short Term', medium: 'Medium Term', long: 'Long Term' }[horizon]
 
     let sentimentLabel: string
-    let sentimentColor: string
+    let pillClass: string
     let SentimentIcon: typeof TrendingUp
 
     if (avgRating >= 4) {
         sentimentLabel = 'Bullish'
-        sentimentColor = 'text-emerald-400'
+        pillClass = 'pill-bullish'
         SentimentIcon = TrendingUp
     } else if (avgRating >= 3) {
         sentimentLabel = 'Moderately Positive'
-        sentimentColor = 'text-blue-400'
+        pillClass = 'pill-bullish'
         SentimentIcon = TrendingUp
     } else if (avgRating >= 2) {
         sentimentLabel = 'Neutral'
-        sentimentColor = 'text-yellow-400'
+        pillClass = 'pill-neutral'
         SentimentIcon = Minus
     } else {
         sentimentLabel = 'Bearish'
-        sentimentColor = 'text-rose-400'
+        pillClass = 'pill-bearish'
         SentimentIcon = TrendingDown
     }
 
@@ -62,69 +62,84 @@ export function PortfolioSummary({ portfolio, horizon, analysisType }: Portfolio
     })
 
     return (
-        <Card className="border border-border/40 bg-gradient-to-r from-card/80 to-card/50 backdrop-blur-sm shadow-lg">
-            <CardContent className="p-5">
-                <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-xl bg-muted/50">
-                        <BarChart3 className={`h-6 w-6 ${sentimentColor}`} />
+        <Card className="rounded-xl border border-border/30 bg-card/60 shadow-sm">
+            <CardContent className="p-6">
+                <div className="flex items-start gap-5">
+                    {/* Icon */}
+                    <div className="p-3 rounded-xl bg-muted/40 shrink-0">
+                        <BarChart3 className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Portfolio Outlook</h3>
-                            <span className="text-xs text-muted-foreground">• {horizonLabel}</span>
+
+                    <div className="flex-1 min-w-0 space-y-4">
+                        {/* Title line */}
+                        <div className="flex flex-wrap items-center gap-3">
+                            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                Portfolio Outlook
+                            </h3>
+                            <span className="text-[11px] text-muted-foreground">• {horizonLabel}</span>
                         </div>
-                        <div className="flex items-center gap-2 mb-3">
-                            <SentimentIcon className={`h-5 w-5 ${sentimentColor}`} />
-                            <span className={`text-xl font-bold ${sentimentColor}`}>{sentimentLabel}</span>
-                            <span className="text-sm text-muted-foreground ml-1">
-                                (avg {avgRating.toFixed(1)}/5)
+
+                        {/* Sentiment pill */}
+                        <div className="flex flex-wrap items-center gap-3">
+                            <span className={`pill-badge ${pillClass}`}>
+                                <SentimentIcon className="h-3.5 w-3.5" />
+                                {sentimentLabel}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                                avg {avgRating.toFixed(1)}/5
                             </span>
                         </div>
 
-                        <div className="flex flex-wrap gap-3 text-sm">
+                        {/* Counts */}
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
                             {bullish.length > 0 && (
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span className="pill-badge pill-bullish">
                                     {bullish.length} Bullish
                                 </span>
                             )}
                             {neutral.length > 0 && (
-                                <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+                                <span className="pill-badge pill-neutral">
                                     {neutral.length} Neutral
                                 </span>
                             )}
                             {bearish.length > 0 && (
-                                <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                <span className="pill-badge pill-bearish">
                                     {bearish.length} Bearish
                                 </span>
                             )}
-                            <span className="text-muted-foreground">
-                                {analyzed.length}/{portfolio.length} stocks analyzed
+                            <span className="text-muted-foreground ml-1">
+                                {analyzed.length}/{portfolio.length} analyzed
                             </span>
                         </div>
 
+                        {/* Strengths & Risks — two clean columns with icons */}
                         {(allGood.length > 0 || allBad.length > 0) && (
-                            <div className="mt-3 pt-3 border-t border-border/30 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="pt-4 border-t border-border/20 grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 {allGood.length > 0 && (
-                                    <div>
-                                        <p className="text-xs font-semibold text-emerald-400 mb-1">Key Strengths</p>
-                                        <ul className="space-y-0.5">
+                                    <div className="space-y-2">
+                                        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                                            Strengths
+                                        </p>
+                                        <ul className="space-y-1.5">
                                             {allGood.slice(0, 3).map((point, i) => (
-                                                <li key={i} className="text-xs text-muted-foreground flex items-start gap-1">
-                                                    <span className="text-emerald-400 mt-0.5">•</span>
-                                                    <span>{point}</span>
+                                                <li key={i} className="flex items-start gap-2 text-xs leading-relaxed">
+                                                    <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0 perf-positive" />
+                                                    <span className="text-foreground/80">{point}</span>
                                                 </li>
                                             ))}
                                         </ul>
                                     </div>
                                 )}
                                 {allBad.length > 0 && (
-                                    <div>
-                                        <p className="text-xs font-semibold text-rose-400 mb-1">Key Risks</p>
-                                        <ul className="space-y-0.5">
+                                    <div className="space-y-2">
+                                        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                                            Risks
+                                        </p>
+                                        <ul className="space-y-1.5">
                                             {allBad.slice(0, 3).map((point, i) => (
-                                                <li key={i} className="text-xs text-muted-foreground flex items-start gap-1">
-                                                    <span className="text-rose-400 mt-0.5">•</span>
-                                                    <span>{point}</span>
+                                                <li key={i} className="flex items-start gap-2 text-xs leading-relaxed">
+                                                    <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0 perf-negative" />
+                                                    <span className="text-foreground/80">{point}</span>
                                                 </li>
                                             ))}
                                         </ul>
