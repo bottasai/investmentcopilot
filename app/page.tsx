@@ -59,7 +59,7 @@ export default function Home() {
 
             {/* Footer */}
             <footer className="border-t border-border/40 py-6 text-center text-sm text-muted-foreground">
-                <p>Investment CoPilot &copy; {new Date().getFullYear()}. AI-powered investment analysis.</p>
+                <p>Investment CoPilot &copy; {new Date().getFullYear()}. AI-powered investment analysis. | <a href="/privacy-policy" className="hover:underline">Privacy Policy</a></p>
             </footer>
         </div>
     )
