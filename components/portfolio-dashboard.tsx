@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react"
 import { useAppStore } from "@/lib/store"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { PortfolioRow } from "@/components/portfolio-row"
+import { PortfolioSummary } from "@/components/portfolio-summary"
 import { Button } from "@/components/ui/button"
 import { Wand2, Loader2, Briefcase, CloudOff, Cloud } from "lucide-react"
 import axios from "axios"
@@ -31,6 +32,7 @@ export function PortfolioDashboard() {
     const { portfolio, investmentStrategy, setPortfolioItemAnalysis, loadFromSheets, sheetsLoaded, spreadsheetId } = useAppStore()
     const [runningAll, setRunningAll] = React.useState(false)
     const [horizon, setHorizon] = React.useState<'short' | 'medium' | 'long'>('medium')
+    const [analysisType, setAnalysisType] = React.useState<'fundamental' | 'technical'>('fundamental')
 
 
     // Load portfolio from Google Sheets when authenticated
@@ -158,6 +160,8 @@ export function PortfolioDashboard() {
         )
     }
 
+    const analysisTypeLabel = analysisType === 'fundamental' ? 'Fundamentals' : 'Technicals'
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -178,20 +182,35 @@ export function PortfolioDashboard() {
                 </Button>
             </div>
 
-            <div className="flex items-center justify-end gap-2">
-                <span className="text-sm text-muted-foreground">Investment Horizon:</span>
-                <Select value={horizon} onValueChange={(v: any) => setHorizon(v)}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select horizon" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="short">Short Term (1-3mo)</SelectItem>
-                        <SelectItem value="medium">Medium Term (6-12mo)</SelectItem>
-                        <SelectItem value="long">Long Term (1-5yr)</SelectItem>
-                    </SelectContent>
-                </Select>
+            <div className="flex flex-wrap items-center justify-end gap-3">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Horizon:</span>
+                    <Select value={horizon} onValueChange={(v: any) => setHorizon(v)}>
+                        <SelectTrigger className="w-[170px]">
+                            <SelectValue placeholder="Select horizon" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="short">Short Term (1-3mo)</SelectItem>
+                            <SelectItem value="medium">Medium Term (6-12mo)</SelectItem>
+                            <SelectItem value="long">Long Term (1-5yr)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Analysis:</span>
+                    <Select value={analysisType} onValueChange={(v: any) => setAnalysisType(v)}>
+                        <SelectTrigger className="w-[160px]">
+                            <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="fundamental">Fundamentals</SelectItem>
+                            <SelectItem value="technical">Technicals</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
 
+            <PortfolioSummary portfolio={portfolio} horizon={horizon} analysisType={analysisType} />
 
             {spreadsheetId && (
                 <div className="flex items-center gap-2 p-3 bg-green-50/50 border border-green-200 rounded-lg text-sm text-green-700">
@@ -220,16 +239,14 @@ export function PortfolioDashboard() {
                                     <TableHead className="font-semibold text-foreground">5d</TableHead>
                                     <TableHead className="font-semibold text-foreground">30d</TableHead>
                                     <TableHead className="font-semibold text-foreground">1y</TableHead>
-                                    <TableHead className="font-semibold text-foreground w-[300px]">Pilot Recommendation</TableHead>
+                                    <TableHead className="font-semibold text-foreground w-[300px]">{analysisTypeLabel}</TableHead>
                                     <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
-
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {portfolio.map((item) => (
-                                    <PortfolioRow key={item.symbol} item={item} horizon={horizon} />
+                                    <PortfolioRow key={item.symbol} item={item} horizon={horizon} analysisType={analysisType} />
                                 ))}
-
                             </TableBody>
                         </Table>
                     </div>

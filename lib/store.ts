@@ -4,19 +4,29 @@ import axios from 'axios'
 
 export type Market = 'US' | 'NSE' | 'BSE' | 'Global'
 
+export interface AnalysisIndicators {
+    good: string[]
+    bad: string[]
+}
+
+export interface AnalysisByHorizon {
+    short: AnalysisIndicators
+    medium: AnalysisIndicators
+    long: AnalysisIndicators
+}
+
+export interface StockAnalysis {
+    rating: number
+    fundamental: AnalysisByHorizon
+    technical: AnalysisByHorizon
+    timestamp: string
+}
+
 export interface PortfolioItem {
     symbol: string
     addedAt: number
     addedDate: string
-    lastAnalysis?: {
-        rating: number
-        horizon: {
-            short: string
-            medium: string
-            long: string
-        }
-        timestamp: string
-    }
+    lastAnalysis?: StockAnalysis
 }
 
 interface AppState {

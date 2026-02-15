@@ -1,5 +1,5 @@
 import { useAppStore } from '../lib/store'
-import type { PortfolioItem } from '../lib/store'
+import type { PortfolioItem, StockAnalysis } from '../lib/store'
 
 // Mock axios to prevent real API calls
 jest.mock('axios', () => ({
@@ -23,6 +23,22 @@ const createItem = (symbol: string): PortfolioItem => ({
     symbol,
     addedAt: Date.now(),
     addedDate: new Date().toISOString(),
+})
+
+// Helper: create a mock structured analysis
+const createAnalysis = (): StockAnalysis => ({
+    rating: 4,
+    fundamental: {
+        short: { good: ['Strong revenue growth', 'Low debt'], bad: ['High P/E ratio'] },
+        medium: { good: ['Market leader', 'Expanding margins'], bad: ['Sector headwinds'] },
+        long: { good: ['Durable moat', 'Cash flow machine'], bad: ['Regulatory risk'] },
+    },
+    technical: {
+        short: { good: ['RSI momentum building', 'Above 20 DMA'], bad: ['Volume declining'] },
+        medium: { good: ['Golden cross forming'], bad: ['Resistance at 200 DMA'] },
+        long: { good: ['Multi-year uptrend'], bad: ['Overextended from mean'] },
+    },
+    timestamp: new Date().toISOString(),
 })
 
 describe('useAppStore', () => {
@@ -67,25 +83,37 @@ describe('useAppStore', () => {
     })
 
     describe('setPortfolioItemAnalysis', () => {
-        it('should update the analysis for the correct item', () => {
+        it('should update the analysis for the correct item with structured data', () => {
             useAppStore.getState().addToPortfolio(createItem('AAPL'))
             useAppStore.getState().addToPortfolio(createItem('GOOGL'))
 
-            const analysis = {
-                rating: 8,
-                horizon: {
-                    short: 'Buy',
-                    medium: 'Hold',
-                    long: 'Strong Buy',
-                },
-                timestamp: new Date().toISOString(),
-            }
-
+            const analysis = createAnalysis()
             useAppStore.getState().setPortfolioItemAnalysis('AAPL', analysis)
 
             const portfolio = useAppStore.getState().portfolio
             expect(portfolio[0].lastAnalysis).toEqual(analysis)
+            expect(portfolio[0].lastAnalysis?.rating).toBe(4)
+            expect(portfolio[0].lastAnalysis?.fundamental.short.good).toContain('Strong revenue growth')
+            expect(portfolio[0].lastAnalysis?.technical.short.bad).toContain('Volume declining')
             expect(portfolio[1].lastAnalysis).toBeUndefined()
+        })
+
+        it('should store both fundamental and technical data per horizon', () => {
+            useAppStore.getState().addToPortfolio(createItem('TSLA'))
+            const analysis = createAnalysis()
+            useAppStore.getState().setPortfolioItemAnalysis('TSLA', analysis)
+
+            const stored = useAppStore.getState().portfolio[0].lastAnalysis!
+
+            // Verify all horizons exist for fundamental
+            expect(stored.fundamental.short.good.length).toBeGreaterThan(0)
+            expect(stored.fundamental.medium.good.length).toBeGreaterThan(0)
+            expect(stored.fundamental.long.good.length).toBeGreaterThan(0)
+
+            // Verify all horizons exist for technical
+            expect(stored.technical.short.good.length).toBeGreaterThan(0)
+            expect(stored.technical.medium.good.length).toBeGreaterThan(0)
+            expect(stored.technical.long.good.length).toBeGreaterThan(0)
         })
     })
 
@@ -152,12 +180,10 @@ describe('useAppStore', () => {
         it('should not crash when removing a non-existent symbol', () => {
             useAppStore.getState().addToPortfolio(createItem('AAPL'))
 
-            // Remove a symbol that doesn't exist
             expect(() => {
                 useAppStore.getState().removeFromPortfolio('DOESNOTEXIST')
             }).not.toThrow()
 
-            // Original item should still be there
             expect(useAppStore.getState().portfolio).toHaveLength(1)
             expect(useAppStore.getState().portfolio[0].symbol).toBe('AAPL')
         })
@@ -175,18 +201,12 @@ describe('useAppStore', () => {
         it('should be a no-op when symbol does not exist', () => {
             useAppStore.getState().addToPortfolio(createItem('AAPL'))
 
-            const analysis = {
-                rating: 5,
-                horizon: { short: 'x', medium: 'y', long: 'z' },
-                timestamp: new Date().toISOString(),
-            }
+            const analysis = createAnalysis()
 
-            // Try to set analysis on a non-existent symbol
             expect(() => {
                 useAppStore.getState().setPortfolioItemAnalysis('NONEXISTENT', analysis)
             }).not.toThrow()
 
-            // AAPL should be unaffected
             expect(useAppStore.getState().portfolio[0].lastAnalysis).toBeUndefined()
         })
     })
